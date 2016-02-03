@@ -1,0 +1,25 @@
+<ion-view class="welcome-view" cache-view="false">
+  <ion-content scroll="false">
+    <div class="row">
+      <div class="col">
+        <a class="button button-block" ng-click="login('facebook')">
+          Log in with Facebook
+        </a>
+      </div>
+    </div>
+    <div class="row" ngShow="googlePlusAvailable">
+      <div class="col">
+        <a class="button button-block" ng-click="login('google')">
+          Log in with Google
+        </a>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <a class="button button-block" ng-click="login('twitter')">
+          Log in with Twitter
+        </a>
+      </div>
+    </div>
+  </ion-content>
+</ion-view>
