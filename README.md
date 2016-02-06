@@ -33,15 +33,15 @@ $ cordova plugin add https://github.com/Wizcorp/phonegap-facebook-plugin.git --v
 To get your iOS API key, go [here] [link3] and create a Google sign in app, choosing iOS as your platform. Once you fill out all the fields, download the```GoogleService-Info.plist``` file. It contains the ```REVERSED_CLIENT_ID``` you'll need during installation.
 
 ###For Android
-To get your iOS API key, go [here] [link3] and create a Google sign in app, choosing iOS as your platform. You'll need to create a key hash again, but this time it will need to be a release ```SHA1``` key. I could not get the debug key to work with the API, it kept rejecting the token. Take a breath, here we go...
+To get your iOS API key, go [here] [link3] and create a Google sign in app, choosing Android as your platform this time. You'll need to create a key hash again, but this time it will need to be a release ```SHA1``` key. I could not get the debug key to work with the API, it kept rejecting the token. Take a breath, here we go...
 
-You'll need to find out where keytool.exe is on your system if it's not already in your PATH. You can find it inside your ```Java\jre1.8.051\bin``` folder. Once you have that, run this commnd replacing <NAME> and <ALIAS> with whatever you want those to be.
+You'll need to find out where keytool.exe is on your system if it's not already in your PATH. You can find it inside your ```Java\jre1.8.051\bin``` folder. Once you have that, run this command replacing <NAME> and <ALIAS> with whatever you want those to be.
 
 ```sh
 <PATH_TO_KEYTOOL.EXE> -genkey -v -keystore <NAME>.keystore -alias <ALIAS> -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-Next, run the following command. This will give you tHE ```SHA1``` key which Google needs.
+Next, run the following command. This will give you the ```SHA1``` key which Google needs.
 
 ```sh
 <PATH_TO_KEYTOOL.EXE> -export -alias <ALIAS_USED_IN_PREVIOUS_STEP> -keystore <PATH_TO_KEYSTORE_CREATED_IN_PREVIOUS_STEP> -list -v
@@ -49,7 +49,7 @@ Next, run the following command. This will give you tHE ```SHA1``` key which Goo
 
 Next, make sure the plugin is installed (see below). We now need to sign a release version of the app if we want to test. You'll need to do this when you release the app as well (obviously).
 
-Run this command once the plugin is installed. This will create release versions for Android and iOS. We're only interested in Android at this point, so you can ignore anything related to iOS.
+Run this command once the plugin is installed. This will create release versions for Android and iOS. We're only interested in Android at this point, so you can ignore anything related to iOS for the moment.
 
 ```sh
 cordova build --release
