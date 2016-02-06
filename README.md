@@ -35,7 +35,7 @@ To get your iOS API key, go [here] [link3] and create a Google sign in app, choo
 ###For Android
 To get your iOS API key, go [here] [link3] and create a Google sign in app, choosing Android as your platform this time. You'll need to create a key hash again, but this time it will need to be a release ```SHA1``` key. I could not get the debug key to work with the API, it kept rejecting the token. Take a breath, here we go...
 
-You'll need to find out where keytool.exe is on your system if it's not already in your PATH. You can find it inside your ```Java\jre1.8.051\bin``` folder. Once you have that, run this command replacing <NAME> and <ALIAS> with whatever you want those to be.
+You'll need to find out where keytool.exe is on your system if it's not already in your PATH. You can find it inside your ```Java\jre1.8.051\bin``` folder. Once you have that, run this command replacing ```<NAME>``` and ```<ALIAS>``` with whatever you want those to be.
 
 ```sh
 <PATH_TO_KEYTOOL.EXE> -genkey -v -keystore <NAME>.keystore -alias <ALIAS> -keyalg RSA -keysize 2048 -validity 10000
