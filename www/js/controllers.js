@@ -21,13 +21,13 @@ angular.module('controllers', [])
     var authResponse = response.authResponse;
 
     getFacebookProfileInfo(authResponse)
-    .then(function(profileInfo) {
+    .then(function(res) {
       // This will be the stuff that goes in the database I'm assuming
       UserService.setUser({
         authResponse: authResponse,
-				userID: profileInfo.id,
-				name: profileInfo.name,
-				email: profileInfo.email,
+				userID: res.id,
+				name: res.name,
+				email: res.email,
         picture : "http://graph.facebook.com/" + authResponse.userID + "/picture?type=large",
         type: 'facebook',
         title: 'Facebook'
@@ -55,11 +55,9 @@ angular.module('controllers', [])
 
     facebookConnectPlugin.api('/me?fields=email,name&access_token=' + authResponse.accessToken, null,
       function (response) {
-				console.log(response);
         info.resolve(response);
       },
       function (response) {
-				console.log(response);
         info.reject(response);
       }
     );
@@ -67,6 +65,8 @@ angular.module('controllers', [])
   };
 
   $scope.login = function(type) {
+    //Clear out the currently logged in user
+    UserService.setUser({});
     switch(type) {
     case 'facebook':
         facebookConnectPlugin.getLoginStatus(function(success){
@@ -74,21 +74,19 @@ angular.module('controllers', [])
             // the user is logged in and has authenticated your app, and response.authResponse supplies
             // the user's ID, a valid access token, a signed request, and the time the access token
             // and signed request each expire
-            console.log('getLoginStatus', success.status);
 
             //check if we have our user saved
             var user = UserService.getUser();
 
-            if(!user.userID)
-            {
+            if(!user.userID && user.type !== 'facebook') {
               getFacebookProfileInfo(success.authResponse)
-              .then(function(profileInfo) {
+              .then(function(res) {
 
                 UserService.setUser({
                   authResponse: success.authResponse,
-                  userID: profileInfo.id,
-                  name: profileInfo.name,
-                  email: profileInfo.email,
+                  userID: res.id,
+                  name: res.name,
+                  email: res.email,
                   picture : "http://graph.facebook.com/" + success.authResponse.userID + "/picture?type=large",
                   type: 'facebook',
                   title: 'Facebook'
@@ -119,26 +117,34 @@ angular.module('controllers', [])
         });
       break;
     case 'google':
-      //$ionicLoading.show({
-      //template: 'Logging in...'
-      //});
 
-      window.plugins.googleplus.login({
-          //'scopes': '', // optional space-separated list of scopes, the default is sufficient for login and basic profile info
-          //'offline': true, // optional, used for Android only - if set to true the plugin will also return the OAuth access token ('oauthToken' param), that can be used to sign in to some third party services that don't accept a Cross-client identity token (ex. Firebase)
-          //'webApiKey': '', // optional API key of your Web application from Credentials settings of your project - if you set it the returned idToken will allow sign in to services like Azure Mobile Services
-          // there is no API key for Android; you app is wired to the Google+ API by listing your package name in the google dev console and signing your apk (which you have done in chapter 4)
-        },
-        function (user_data) {
-          console.log(user_data);
-          //This will be teh stuff that goes in teh database I'm assuming
+      var arguments = {};
+
+      if (ionic.Platform.isAndroid()) {
+        arguments = {
+          'scopes': 'email profile',
+          'offline': true,
+        }
+      }
+      else if (ionic.Platform.isIOS()) {
+        arguments = {
+          'scopes': 'email profile',
+          'offline': true,
+        }
+      }
+
+      window.plugins.googleplus.login(
+        arguments,
+        function (res) {
+          console.log(res);
+
           UserService.setUser({
-            userID: user_data.userId,
-            name: user_data.displayName,
-            email: user_data.email,
-            picture: user_data.imageUrl,
-            accessToken: user_data.accessToken,
-            idToken: user_data.idToken,
+            userID: res.userId,
+            name: res.displayName,
+            email: res.email,
+            picture: res.imageUrl,
+            accessToken: res.accessToken,
+            idToken: res.idToken,
             type: 'google',
             title: 'Google+'
           });
@@ -153,11 +159,24 @@ angular.module('controllers', [])
       );
       break;
     case 'twitter':
-        /*$cordovaOauth.twitter("QvvuMbOMmjk6NXIprkXOkMKy9", "iwAJuZhg2VihNopmf13CLuoWx7NC3P57SlcYoLN6lW2bQGgJYp").then(function(result) {
-          console.log(JSON.stringify(result));  
-        }, function(error) {
-          console.log(JSON.stringify(result));
-        });*/ 
+        TwitterConnect.login(
+          function(res) {
+            UserService.setUser({
+              userID: res.userId,
+              name: res.userName,
+              //email: res.email, <-- Need whitelisted
+              //picture: res.imageUrl, <-- Yes? No? If yes, need to extend Java/Objective C capabilities or use REST API
+              secret: res.secret,
+              token: res.token,
+              type: 'twitter',
+              title: 'Twitter'
+            });
+            $state.go('app.info');
+          }, function(error) {
+            console.log('Error logging in');
+            console.log(error);
+          }
+        );
         break;
     }
   };
@@ -169,7 +188,7 @@ angular.module('controllers', [])
 
 .controller('InfoCtrl', function($scope, UserService, $ionicActionSheet, $state, $ionicLoading){
 
-	$scope.user = UserService.getUser();
+	$scope.profile = UserService.getUser();
 
 	$scope.showLogOutMenu = function() {
 		var hideSheet = $ionicActionSheet.show({
@@ -185,26 +204,48 @@ angular.module('controllers', [])
 					template: 'Logging out...'
 				});
 
-        //facebook logout
-        facebookConnectPlugin.logout(function(){
-          $ionicLoading.hide();
-          $state.go('welcome');
-        },
-        function(fail){
-          $ionicLoading.hide();
-        });
-
-        // Google logout
-        window.plugins.googleplus.logout(
-          function (msg) {
-            console.log(msg);
-            $ionicLoading.hide();
-            $state.go('welcome');
-          },
-          function(fail){
-            console.log(fail);
-          }
-        );
+        switch($scope.profile.type) {
+          case 'facebook':
+            facebookConnectPlugin.logout(function(){
+              UserService.setUser({});
+              $ionicLoading.hide();
+              console.log('Successful logout!');
+              $state.go('welcome');
+            },
+            function(fail){
+              $ionicLoading.hide();
+              console.log('Error logging out' + fail);
+            });
+            break;
+          case 'google':
+            window.plugins.googleplus.logout(
+              function (msg) {
+                UserService.setUser({});
+                $ionicLoading.hide();
+                console.log('Successful logout!');
+                $state.go('welcome');
+              },
+              function(fail){
+                $ionicLoading.hide();
+                 console.log('Error logging out' + fail);
+              }
+            );
+            break;
+          case 'twitter':
+            TwitterConnect.logout(
+              function() {
+                UserService.setUser({});
+                $ionicLoading.hide();
+                console.log('Successful logout!');
+                $state.go('welcome');
+              },
+              function() {
+                $ionicLoading.hide();
+                console.log('Error logging out');
+              }
+            );
+            break;
+        }   
 			}
 		});
 	};
