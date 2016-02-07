@@ -1,5 +1,9 @@
 #Social Login
 
+A simple app that demonstrates app login using social media platforms.
+
+##Installation
+
 ngCordova will be required
 
 ```sh
